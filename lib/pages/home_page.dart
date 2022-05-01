@@ -1,7 +1,7 @@
 import 'package:about_me/pages/estudiante.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -11,11 +11,27 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Future<List<Estudiante>> readJson() async {
-    final String response = await rootBundle.loadString('assets/sample.json');
-    final data = await json.decode(response) as List<dynamic>;
+  List<Estudiante> estudiantes = [];
 
-    return data.map((e) => Estudiante.fromJson(e)).toList();
+  @override
+  void initState() {
+    loadData();
+    super.initState();
+  }
+
+  Future<String> readJsonFromFireBase() async {
+    String url =
+        "https://primer-rest-api-729c7-default-rtdb.firebaseio.com/.json";
+    http.Response response = await http.get(Uri.parse(url));
+    return response.body;
+  }
+
+  Future loadData() async {
+    final String jsonString = await readJsonFromFireBase();
+    final dynamic jsonResponse = json.decode(jsonString);
+    for (Map<String, dynamic> i in jsonResponse) {
+      estudiantes.add(Estudiante.fromJson(i));
+    }
   }
 
   @override
@@ -26,32 +42,37 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: const Color.fromARGB(255, 29, 58, 105),
         ),
         body: FutureBuilder(
-            future: readJson(),
+            future: readJsonFromFireBase(),
             builder: (context, data) {
               if (data.hasError) {
                 return Center(child: Text("${data.error}"));
               } else if (data.hasData) {
-                var items = data.data as List<Estudiante>;
                 return ListView.builder(
-                    itemCount: items == null ? 0 : items.length,
+                    itemCount: estudiantes == null ? 0 : estudiantes.length,
                     itemBuilder: (context, index) {
                       return ListTile(
                         onTap: () {
                           Navigator.of(context).push(MaterialPageRoute(
                               builder: (context) => StudentInfo(
-                                  numControl: items[index].numControl.toString(),
-                                  nombre: items[index].nombre.toString(),
-                                  carrera: items[index].carrera.toString(),
-                                  semestre: items[index].semestre.toString(),
-                                  telefono: items[index].telefono.toString(),
-                                  correo: items[index].correo.toString())));
+                                  numControl:
+                                      estudiantes[index].numControl.toString(),
+                                  nombre:
+                                      estudiantes[index].nombre.toString(),
+                                  carrera:
+                                      estudiantes[index].carrera.toString(),
+                                  semestre:
+                                      estudiantes[index].semestre.toString(),
+                                  telefono:
+                                      estudiantes[index].telefono.toString(),
+                                  correo:
+                                      estudiantes[index].correo.toString())));
                         },
-                        title: Text(items[index].nombre.toString()),
-                        subtitle: Text(items[index].carrera.toString()),
+                        title: Text(estudiantes[index].nombre.toString()),
+                        subtitle: Text(estudiantes[index].carrera.toString()),
                         leading: CircleAvatar(
                             backgroundColor:
                                 const Color.fromARGB(255, 29, 58, 105),
-                            child: Text(items[index]
+                            child: Text(estudiantes[index]
                                 .nombre
                                 .toString()
                                 .substring(0, 1))),
@@ -59,7 +80,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     });
               } else {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
             }));
   }
@@ -76,12 +97,13 @@ class Estudiante {
   Estudiante(this.numControl, this.nombre, this.carrera, this.semestre,
       this.telefono, this.correo);
 
-  Estudiante.fromJson(Map<String, dynamic> json) {
-    numControl = json['numControl'];
-    nombre = json['nombre'];
-    carrera = json['carrera'];
-    semestre = json['semestre'];
-    telefono = json['telefono'];
-    correo = json['correo'];
+  factory Estudiante.fromJson(Map<String, dynamic> parsedJson) {
+    return Estudiante(
+        parsedJson['numControl'],
+        parsedJson['nombre'],
+        parsedJson['carrera'],
+        parsedJson['semestre'],
+        parsedJson['telefono'],
+        parsedJson['correo']);
   }
 }
