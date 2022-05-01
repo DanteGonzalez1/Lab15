@@ -87,12 +87,12 @@ class _HomePageState extends State<HomePage> {
 }
 
 class Estudiante {
-  String? numControl;
-  String? nombre;
-  String? carrera;
-  String? semestre;
-  String? telefono;
-  String? correo;
+  String numControl;
+  String nombre;
+  String carrera;
+  String semestre;
+  String telefono;
+  String correo;
 
   Estudiante(this.numControl, this.nombre, this.carrera, this.semestre,
       this.telefono, this.correo);
